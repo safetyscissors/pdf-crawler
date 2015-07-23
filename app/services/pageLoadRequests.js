@@ -1,5 +1,6 @@
 var phantom = require('phantom');
 var queryString = require('query-string');
+
 /**
  * use for pages that redirect or lazy load.
  * returns body html
@@ -26,11 +27,31 @@ exports.phantomLoad = function(requestObj, callback){
       if(requestObj.method.toLowerCase()=='get'){
         page.open(requestObj.url, requestObj.method, processPage)
       }else{
-        console.log(queryString.stringify(requestObj.data));
         page.open(requestObj.url, requestObj.method, queryString.stringify(requestObj.data), processPage)
       }
 
 
     })
   }, options);
+};
+
+
+exports.authenticate = function(){
+  var loginData = require('../config/dominoLogin');
+  var dominoUrls = require('../config/dominoUrls');
+  var request = {
+    url:dominoUrls.auth,
+    method:'post',
+    data:loginData
+  };
+
+  return request;
+};
+
+exports.loadListing = function(){
+
+};
+
+exports.loadForm = function(callback){
+
 };

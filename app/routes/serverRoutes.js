@@ -1,4 +1,4 @@
-
+var phantomService = require('../services/phantomService');
 
 exports.healthCheck = function(req,res,next){
   var timestamp= (new Date).toISOString();
@@ -11,4 +11,8 @@ exports.errorCheck = function(error, req, res){
     res.send(error.msg);
   }
   res.send('request end')
+};
+
+exports.init = function(req, res, next){
+  phantomService.startServer(req, next);
 };

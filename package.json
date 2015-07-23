@@ -26,8 +26,12 @@
   },
   "homepage": "https://github.com/unsafetyscissors/pdf-crawler#readme",
   "dependencies": {
+    "async": "^1.4.0",
+    "body-parser": "^1.13.2",
     "express": "^4.13.1",
     "phantom": "^0.7.2",
-    "query-string": "^2.3.0"
+    "query-string": "^2.3.0",
+    "querystring": "^0.2.0",
+    "underscore": "^1.8.3"
   }
 }
