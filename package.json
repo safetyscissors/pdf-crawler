@@ -1,0 +1,33 @@
+{
+  "name": "pdf-crawler",
+  "version": "1.0.0",
+  "description": "crawls our site and pdfs pages",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unsafetyscissors/pdf-crawler.git"
+  },
+  "keywords": [
+    "node",
+    "npm",
+    "pdftk",
+    "htmltopdf",
+    "aws",
+    "s3"
+  ],
+  "author": "andrew ito <andrew_ito@datahouse.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/unsafetyscissors/pdf-crawler/issues"
+  },
+  "homepage": "https://github.com/unsafetyscissors/pdf-crawler#readme",
+  "dependencies": {
+    "express": "^4.13.1",
+    "phantom": "^0.7.2",
+    "query-string": "^2.3.0"
+  }
+}
