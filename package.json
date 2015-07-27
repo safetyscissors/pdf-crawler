@@ -29,9 +29,14 @@
     "async": "^1.4.0",
     "body-parser": "^1.13.2",
     "express": "^4.13.1",
+    "htmlparser2": "^3.8.3",
+    "jsdom": "^5.6.1",
+    "mysql": "^2.8.0",
+    "node-jsdom": "^3.1.5",
     "phantom": "^0.7.2",
     "query-string": "^2.3.0",
     "querystring": "^0.2.0",
+    "temp": "^0.8.3",
     "underscore": "^1.8.3"
   }
 }

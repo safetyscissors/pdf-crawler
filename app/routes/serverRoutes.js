@@ -5,14 +5,14 @@ exports.healthCheck = function(req,res,next){
   res.send(timestamp);
 };
 
-exports.errorCheck = function(error, req, res){
-  console.log(error);
+exports.errorCheck = function(error, req, res, next){
+  var message = 'request ended';
   if(error){
-    res.send(error.msg);
+    message += ' - ' + error.message;
   }
-  res.send('request end')
+  res.send(message);
 };
 
-exports.init = function(req, res, next){
+exports.initPhantom = function(req, res, next){
   phantomService.startServer(req, next);
 };

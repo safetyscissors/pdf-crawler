@@ -18,7 +18,7 @@ exports.loadPage = function(phantomServer, requestObj, callback){
     //once page is opened, check for failed, then continue
     var processPage = function (status) {
       var error = (status !== 'success') ? (new Error('[phantomService] failed phantom page load. status:' + status)) : null;
-      callback(error, page);
+      callback(error, page)
     };
 
     //if get, give less arguments
@@ -41,4 +41,10 @@ exports.startServer = function(req, callback){
     req.phantomServer = phantomServer;
     callback();
   }, options);
+};
+
+exports.pdfPage = function(pageData, next, loadError, loadPage){
+  if(loadError) return next(loadError);
+  var dirName = 'app/pdfs/';
+  var fileName = dirName + pageData.projectNumber + '-' +  (new Date).getTime()
 };
