@@ -1,5 +1,6 @@
 var mysql = require('mysql');
 var async = require('async');
+var _ = require('underscore');
 
 exports.start = function(req,res,next){
   var db = mysql.createConnection(require('../config/mysqlLogin'));
@@ -28,5 +29,13 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
         });
       });
     });
+  });
+};
+
+exports.saveListRecord = function(db, page, callback){
+  var keys = _.keys(page).join(',');
+  var values = _.values(page).join(',');
+  db.query('INSERT INTO scrape_file_data ('+keys+') VALUES ('+values+')', function(insertErr, insertResult){
+    callback(insertErr);
   });
 };

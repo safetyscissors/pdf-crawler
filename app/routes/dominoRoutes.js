@@ -1,6 +1,7 @@
 var pageRequestService = require('../services/pageLoadRequests');
 var phantomService = require('../services/phantomService');
 var parsingService = require('../services/pageParsing');
+var mysqlService = require('../services/mysqlService');
 var async = require('async');
 var _ = require('underscore');
 
@@ -36,11 +37,18 @@ exports.pdfPages = function(req, res, next){
     if(!pageRequest) return next(new Error('failed to create pageData: ' + JSON.stringify(pageData)));
 
     phantomService.loadPage(req.phantomServer, pageRequest,
-      phantomService.pdfPage.bind(pageData, next)
-    );
-  });
+      phantomService.pdfPage.bind(null, pageData, function(pdfError, savedData){
+        if (pdfError) return eachCallback(pdfError);
 
-  res.send('done');
+        mysqlService.saveListRecord(req.db, savedData, function (saveError) {
+          eachCallback(saveError);
+        });
+      })
+    );
+  }, function(callbackError){
+    if(callbackError) return next(callbackError);
+    res.send('done')
+  });
 };
 
 exports.auth = function(req, res, next){

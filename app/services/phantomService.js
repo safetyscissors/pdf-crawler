@@ -43,8 +43,16 @@ exports.startServer = function(req, callback){
   }, options);
 };
 
-exports.pdfPage = function(pageData, next, loadError, loadPage){
-  if(loadError) return next(loadError);
+exports.pdfPage = function(pageData, callback, loadError, loadPage){
+  if(loadError) return callback(loadError);
   var dirName = 'app/pdfs/';
-  var fileName = dirName + pageData.projectNumber + '-' +  (new Date).getTime()
+  var fileName =  'archive-'+pageData.dominoId + '-' + pageData.projectNumber + '-' +  (new Date).getTime() + '.jpg';
+
+  pageData['pdfName'] = fileName;
+  pageData['pdfDir'] = dirName;
+  console.log('pdfed ' + fileName);
+
+  loadPage.render(dirName + fileName);
+
+  return callback(null, pageData);
 };

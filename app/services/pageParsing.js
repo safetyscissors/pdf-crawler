@@ -18,6 +18,7 @@ exports.extractDiv = function(content, body, callback){
 
       var listingData = {
         url:element._childNodes[12]._childNodes[0]._childNodes[0].href.replace('file://', baseUrl),
+        dominoId:element._childNodes[12]._childNodes[0]._childNodes[0].innerHTML,
         documentNumber:element._childNodes[2]._childNodes[0].innerHTML,
         projectNumber:element._childNodes[3]._childNodes[0].innerHTML
       };
