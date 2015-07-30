@@ -2,13 +2,17 @@ var pageRequestService = require('../services/pageLoadRequests');
 var phantomService = require('../services/phantomService');
 var parsingService = require('../services/pageParsing');
 var mysqlService = require('../services/mysqlService');
+var s3Service = require('../services/s3Service');
 var async = require('async');
 var _ = require('underscore');
 
 exports.unauth = function(req, res, next){};
 
+exports.raceTest = function(req, res, next){
+  pageRequestService.testMysql(req.db, function(){});
+};
+
 exports.listing = function(req, res, next){
-  console.log('hi');
   //setup list page
   pageRequestService.loadListing(req.db, function(dbError, listRequest){
 
@@ -22,7 +26,6 @@ exports.listing = function(req, res, next){
         function(body){ parsingService.extractDiv('content', body, function(domError, pages){
           if (domError) return next(domError);
 
-          console.log(pages);
           req.listing = pages;
           return next();
         })}
@@ -47,7 +50,16 @@ exports.pdfPages = function(req, res, next){
     );
   }, function(callbackError){
     if(callbackError) return next(callbackError);
-    res.send('done')
+    return next();
+  });
+};
+
+exports.uploadPages = function(req, res, next){
+  async.eachSeries(req.listing, function(pageData, eachCallback){
+    s3Service.uploadPdf(req.s3, pageData, eachCallback);
+  }, function(callbackError){
+    if(callbackError) return next(callbackError);
+    res.send('done');
   });
 };
 

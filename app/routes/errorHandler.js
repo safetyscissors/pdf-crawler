@@ -1,6 +1,6 @@
 
 var errorHandler = function(error, req, res){
-  console.log('hi',error);
+  console.log('error:',error);
   res.send('hi')
 };
 

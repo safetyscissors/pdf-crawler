@@ -15,6 +15,21 @@ exports.authenticate = function(){
   return request;
 };
 
+exports.testMysql = function(db, callback){
+  for(var i=0;i<100;i++) {
+    setTimeout(function() {
+      mysqlService.getNextRecordsToScrape(db, dominoUrls.list, function (dbErr, dbResult, increment) {
+        var debug = {
+          err: dbErr,
+          res: dbResult,
+          inc: increment
+        };
+        console.log(debug);
+      })
+    }, 100*Math.random()*i);
+  }
+};
+
 exports.loadListing = function(db, callback){
   mysqlService.getNextRecordsToScrape(db, dominoUrls.list, function(dbErr, dbResult, increment){
     if(dbErr) return callback(dbErr);
@@ -29,7 +44,6 @@ exports.loadListing = function(db, callback){
       method:'get'
     };
 
-    console.log(request);
     callback(dbErr, request);
   });
 };

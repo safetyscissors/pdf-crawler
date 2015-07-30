@@ -1,5 +1,5 @@
 var phantomService = require('../services/phantomService');
-
+var mysqlService = require('../services/mysqlService');
 exports.healthCheck = function(req,res,next){
   var timestamp= (new Date).toISOString();
   res.send(timestamp);

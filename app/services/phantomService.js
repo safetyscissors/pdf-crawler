@@ -50,7 +50,6 @@ exports.pdfPage = function(pageData, callback, loadError, loadPage){
 
   pageData['pdfName'] = fileName;
   pageData['pdfDir'] = dirName;
-  console.log('pdfed ' + fileName);
 
   loadPage.render(dirName + fileName);
 
