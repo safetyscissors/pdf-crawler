@@ -35,8 +35,8 @@ exports.loadListing = function(db, callback){
     if(dbErr) return callback(dbErr);
 
     var getparams = '';
-    if(_.has(dbResult[0], 'current_list_index')){
-      getparams = '?OpenView&Count=' + increment + '&Start=' + dbResult[0]['current_list_index'];
+    if(dbResult){
+      getparams = '?OpenView&Count=' + increment + '&Start=' + dbResult;
     }
 
     var request = {

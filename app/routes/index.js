@@ -12,7 +12,7 @@ exports.addRoutes = function(app){
   app.get('/raceTest', domino.raceTest);
   app.get('/', server.healthCheck);
   app.get('/unauth', domino.unauth);
-  app.get('/scrapePages', domino.listing, domino.pdfPages, domino.uploadPages);
+  app.get('/scrapePages', domino.listing, domino.pdfPages, domino.uploadPages, domino.cleanUp);
 
   app.use(server.errorCheck);
 };

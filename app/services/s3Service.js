@@ -17,7 +17,7 @@ exports.initS3 = function(req, res, next){
 
 exports.uploadPdf = function(client, file, callback){
   var params = {
-    localFile: file.pdfDir + file.pdfName,
+    localFile: 'app/pdfs/' + file.pdfName,
     s3Params:{
       Bucket:s3config.bucketName,
       Key:'historic/'+file.pdfName

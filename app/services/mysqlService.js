@@ -20,7 +20,9 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
 
     //start transaction
     function(waterfallCallback){
-      db.beginTransaction(waterfallCallback);
+      db.beginTransaction(function(beginErr){
+        waterfallCallback(beginErr);
+      });
     },
 
     //select current index

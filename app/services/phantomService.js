@@ -43,13 +43,12 @@ exports.startServer = function(req, callback){
   }, options);
 };
 
-exports.pdfPage = function(pageData, callback, loadError, loadPage){
+exports.pdfPage = function(loadError, loadPage, pageData, callback){
   if(loadError) return callback(loadError);
   var dirName = 'app/pdfs/';
   var fileName =  'archive-'+pageData.dominoId + '-' + pageData.projectNumber + '-' +  (new Date).getTime() + '.jpg';
 
   pageData['pdfName'] = fileName;
-  pageData['pdfDir'] = dirName;
 
   loadPage.render(dirName + fileName);
 

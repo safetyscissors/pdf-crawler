@@ -23,7 +23,7 @@ exports.listing = function(req, res, next){
       //return all html
       loadPage.evaluate(
         function(){ return document.body.innerHTML },
-        function(body){ parsingService.extractDiv('content', body, function(domError, pages){
+        function(body){ parsingService.readListing('content', body, function(domError, pages){
           if (domError) return next(domError);
 
           req.listing = pages;
@@ -33,12 +33,57 @@ exports.listing = function(req, res, next){
     });
   });
 };
+/*
+exports.pdfPage = function(pageData, callback){
+  async.waterfall(
+    [
+      pageRequestService.loadPage,
+
+      phantomService.loadPage,
+
+      loadPage.evaluate,
+
+      parsingService.readPageForAttachments,
+
+      phantomService.pdfPage,
+
+      mysqlService.saveListRecord
+    ],
+
+    //on waterfall end
+    function(waterfallError){
+      eachCallback(waterfallError);
+    }
+  )
+};
+*/
 
 exports.pdfPages = function(req, res, next){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     var pageRequest = pageRequestService.loadPage(pageData);
     if(!pageRequest) return next(new Error('failed to create pageData: ' + JSON.stringify(pageData)));
 
+    phantomService.loadPage(req.phantomServer, pageRequest, function(loadError, loadPage){
+      if(loadError) return eachCallback(loadError);
+
+      //return all html
+      loadPage.evaluate(
+        function(){return document.body.innerHTML},
+        function(body){parsingService.readPageForAttachments(body, pageData, function(parseError, attachments){
+          if(parseError) return eachCallback(parseError);
+
+          phantomService.pdfPage(loadError, loadPage, pageData, function(pdfError, savedData){
+            if (pdfError) return eachCallback(pdfError);
+
+            mysqlService.saveListRecord(req.db, savedData, function (saveError) {
+              eachCallback(saveError);
+            });
+          })
+        })}
+      );
+
+    });
+    /*
     phantomService.loadPage(req.phantomServer, pageRequest,
       phantomService.pdfPage.bind(null, pageData, function(pdfError, savedData){
         if (pdfError) return eachCallback(pdfError);
@@ -48,6 +93,7 @@ exports.pdfPages = function(req, res, next){
         });
       })
     );
+    */
   }, function(callbackError){
     if(callbackError) return next(callbackError);
     return next();
@@ -59,7 +105,7 @@ exports.uploadPages = function(req, res, next){
     s3Service.uploadPdf(req.s3, pageData, eachCallback);
   }, function(callbackError){
     if(callbackError) return next(callbackError);
-    res.send('done');
+    next()
   });
 };
 
@@ -73,4 +119,21 @@ exports.auth = function(req, res, next){
     next(loadError);
   });
 
+};
+
+exports.cleanUp = function(req, res, next){
+  var tempDir ='app/pdfs';
+  var exec = require('child_process').exec, child;
+  child = exec('rm app/pdfs/*', function(err, out){
+    console.log(out);
+    if(err) return next(err);
+    res.send('done');
+
+    req.phantomServer.exit();
+    console.log('stopping phantom');
+
+    req.db.end(function(err){
+      console.log('stopping mysql');
+    })
+  });
 };
