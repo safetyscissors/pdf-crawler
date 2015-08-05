@@ -94,6 +94,7 @@ exports.readPageForAttachments = function(body, listingData, callback){
 
   jsDom.env(body, ["http://code.jquery.com/jquery.js"], function(domErrors, dom) {
     dom.$('a').each(function(link,element){
+      var attachObj = {};
 
       //if link is listing home link, skip.
       if(element.href.indexOf('+Home') > -1) return;
@@ -101,13 +102,21 @@ exports.readPageForAttachments = function(body, listingData, callback){
       //if link is attachments, go deeper and pull those links
       if(element.innerHTML.toLowerCase().indexOf('file attachment') > -1){
         console.log('attachment:', element.href, ' document:', listingData.dominoId );
+        attachObj.href= element.href;
+        attachObj.url = listingData.url;
+        attachObj.type= 'file';
+        attachObj.dominoId = listingData.dominoId;
       }
 
       //if link is a sub page, scrape it too
       else{
-        console.log('scrape this:',element.href, ' document:', listingData.dominoId );
+        attachObj.href= element.href;
+        attachObj.url = listingData.url;
+        attachObj.type= 'javascript';
+        attachObj.dominoId = listingData.dominoId;
       }
-      attachments.push(element.href);
+
+      attachments.push(attachObj);
     });
 
     callback(domErrors, attachments);

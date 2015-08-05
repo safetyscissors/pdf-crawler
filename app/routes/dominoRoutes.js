@@ -58,6 +58,142 @@ exports.pdfPage = function(pageData, callback){
 };
 */
 
+exports.scrapePdf = function(req, res, next){
+
+  async.eachSeries(req.listing, function(pageData, eachCallback){
+    async.waterfall([
+
+      //get the http request obj and load teh page
+      function(waterfallCallback){
+        var pageRequest = pageRequestService.loadPage(pageData);
+        if(!pageRequest) return waterfallCallback(new Error('failed to create pageData: ' + JSON.stringify(pageData)));
+
+        phantomService.loadPage(req.phantomServer, pageRequest, function(loadError, loadPage) {
+          waterfallCallback(loadError, loadPage);
+        });
+      },
+
+      //pdf the pages
+      function(loadPage, waterfallCallback){
+        phantomService.pdfPage(null, loadPage, pageData, function(pdfError, savedData){
+          if (pdfError) return waterfallCallback(pdfError);
+
+          mysqlService.saveListRecord(req.db, savedData, function (saveError) {
+            waterfallCallback(saveError, loadPage);
+          });
+        })
+      },
+
+      //get the attachment data
+      function(loadPage, waterfallCallback){
+        loadPage.evaluate(
+          function(){return document.body.innerHTML},
+          function(body){
+            parsingService.readPageForAttachments(body, pageData, function(parseError, attachments) {
+              waterfallCallback(parseError, loadPage, attachments);
+            });
+          }
+        );
+      },
+
+      function(loadPage, attachments, waterfallCallback){
+        console.log(attachments);
+
+        async.each(attachments,
+          function(attachment, nextAttachment){
+            var firstUrl = (attachment.type=='javascript')?attachment.url:attachment.href;
+
+            req.phantomServer.createPage(function(attachmentPage){
+              attachmentPage.open(firstUrl);
+              if(attachment.type=='javascript'){
+                attachmentPage.includeJs("http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js", function() {
+                  attachmentPage.evaluate(
+                    //on the web page
+                    function () {
+                      $('a').click();
+                      setTimeout(function(){
+                        return window.location.href;
+                      }, 100)
+
+                    },
+
+                    //response
+                    function (windowHref) {
+                      console.log('window href:', windowHref);
+                      attachmentPage.render('app/pdfs/jsPage' + (new Date).getTime() + '.jpg');
+                      nextAttachment();
+                    }
+                  );
+                });
+
+              }else{
+                attachmentPage.render('app/pdfs/attachmentPage' + (new Date).getTime()+'.jpg');
+                nextAttachment();
+              }
+            });
+
+          },
+          function(attachErr){
+            waterfallCallback();
+          }
+        );
+      }
+
+
+    ], function(waterfallErr){
+      return eachCallback(waterfallErr);
+    });
+
+  }, function(callbackError){
+    if(callbackError) return next(callbackError);
+    return next();
+  });
+};
+
+
+
+exports.scrapePdfOg = function(req, res, next){
+  async.eachSeries(req.listing, function(pageData, eachCallback){
+    var pageRequest = pageRequestService.loadPage(pageData);
+    if(!pageRequest) return next(new Error('failed to create pageData: ' + JSON.stringify(pageData)));
+
+    phantomService.loadPage(req.phantomServer, pageRequest, function(loadError, loadPage){
+      if(loadError) return eachCallback(loadError);
+
+      //return all html
+      loadPage.evaluate(
+        function(){return document.body.innerHTML},
+        function(body){parsingService.readPageForAttachments(body, pageData, function(parseError, attachments){
+          if(parseError) return eachCallback(parseError);
+
+          phantomService.pdfPage(loadError, loadPage, pageData, function(pdfError, savedData){
+            if (pdfError) return eachCallback(pdfError);
+
+            mysqlService.saveListRecord(req.db, savedData, function (saveError) {
+              eachCallback(saveError);
+            });
+          })
+        })}
+      );
+
+    });
+    /*
+     phantomService.loadPage(req.phantomServer, pageRequest,
+     phantomService.pdfPage.bind(null, pageData, function(pdfError, savedData){
+     if (pdfError) return eachCallback(pdfError);
+
+     mysqlService.saveListRecord(req.db, savedData, function (saveError) {
+     eachCallback(saveError);
+     });
+     })
+     );
+     */
+  }, function(callbackError){
+    if(callbackError) return next(callbackError);
+    return next();
+  });
+};
+
 exports.pdfPages = function(req, res, next){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     var pageRequest = pageRequestService.loadPage(pageData);
@@ -136,4 +272,15 @@ exports.cleanUp = function(req, res, next){
       console.log('stopping mysql');
     })
   });
+};
+
+exports.stopping = function(req, res, next){
+  req.phantomServer.exit();
+  console.log('stopping phantom');
+
+  req.db.end(function(err){
+    console.log('stopping mysql');
+  })
+
+  res.send('done');
 };

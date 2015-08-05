@@ -2,7 +2,7 @@ var bodyParser = require('body-parser');
 var server = require('./serverRoutes');
 var domino = require('./dominoRoutes');
 var mysqlService = require('../services/mysqlService');
-var s3Service = require('../services/s3service');
+var s3Service = require('../services/s3Service');
 
 
 exports.addRoutes = function(app){
@@ -13,6 +13,6 @@ exports.addRoutes = function(app){
   app.get('/', server.healthCheck);
   app.get('/unauth', domino.unauth);
   app.get('/scrapePages', domino.listing, domino.pdfPages, domino.uploadPages, domino.cleanUp);
-
+  app.get('/testJs', domino.listing, domino.scrapePdf, domino.stopping);//domino.uploadPages, domino.cleanUp);
   app.use(server.errorCheck);
 };

@@ -24,12 +24,21 @@ DROP TABLE IF EXISTS `scrape_file_data`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `scrape_file_data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `project_number` varchar(45) DEFAULT NULL,
-  `document_number` varchar(45) DEFAULT NULL,
+  `projectNumber` varchar(45) DEFAULT NULL,
+  `documentNumber` varchar(45) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL,
-  `fname` varchar(255) DEFAULT NULL,
+  `dominoId` varchar(45) DEFAULT NULL,
+  `pdfName` varchar(255) DEFAULT NULL,
+  `vendorName` varchar(255) DEFAULT NULL,
+  `amount` varchar(255) DEFAULT NULL,
+  `checkDate` datetime DEFAULT NULL,
+  `checkNo` varchar(255) DEFAULT NULL,
+  `dateAccepted` datetime DEFAULT NULL,
+  `principalInvestigator` varchar(255) DEFAULT NULL,
+  `foCode` varchar(255) DEFAULT NULL,
+  `requestNumber` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=491 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -56,4 +65,4 @@ CREATE TABLE `scrape_list_data` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-07-27  9:10:59
+-- Dump completed on 2015-08-04 20:19:49
