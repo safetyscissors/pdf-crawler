@@ -4,7 +4,8 @@ var _ = require('underscore');
 
 
 /**
- * Loads a page.
+ * Loads a page from a pageLoadRequest.
+ * phantom.createPage, page.open, returns callback.
  * @param phantomServer
  * @param request   //{url:'', method:'', *data:{}}
  * @param callback  //(error, *page);
@@ -31,7 +32,8 @@ exports.loadPage = function(phantomServer, requestObj, callback){
 };
 
 /**
- * Starts a server. Adds it to the request
+ * Part of init. Starts phantom server.
+ * Adds to req.phantomServer.
  * @param req
  * @param callback
  */
@@ -43,6 +45,15 @@ exports.startServer = function(req, callback){
   }, options);
 };
 
+/**
+ * Given a loaded page, renders a pdf and save to 'app/pdfs'.
+ * Also names file 'archive-dominoId-projectNumber-timestring.jpg'
+ * @param loadError
+ * @param loadPage
+ * @param pageData
+ * @param callback
+ * @returns {*}
+ */
 exports.pdfPage = function(loadError, loadPage, pageData, callback){
   if(loadError) return callback(loadError);
   var dirName = 'app/pdfs/';

@@ -2,6 +2,13 @@ var mysql = require('mysql');
 var async = require('async');
 var _ = require('underscore');
 
+/**
+ * Creates a new db connection. returns a callback within the connect statement.
+ * adds a req.db
+ * @param req
+ * @param res
+ * @param next
+ */
 exports.initDb = function(req,res,next){
   var db = mysql.createConnection(require('../config/mysqlLogin'));
   req.db  = db;
@@ -11,7 +18,12 @@ exports.initDb = function(req,res,next){
   })
 };
 
-
+/**
+ * safely gets the next 10 rows available.
+ * @param db
+ * @param listUrl
+ * @param callback
+ */
 exports.getNextRecordsToScrape = function(db, listUrl, callback){
   var increment = 10;
   var currentIndex = 0;
@@ -64,14 +76,39 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
   });
 };
 
+/**
+ * Inserts a scraped records information.
+ * this insert is called for each record
+ * @param db
+ * @param page
+ * @param callback
+ */
 exports.saveListRecord = function(db, page, callback){
   var keys = _.keys(page).join(',');
   var values = _.values(page);
   var placeHolders = new Array(values.length-1);
   placeHolders.push('?');
   placeHolders = placeHolders.join('?, ');
+
   var sql = 'INSERT INTO scrape_file_data ('+keys+') VALUES ('+placeHolders+')';
-  db.query('INSERT INTO scrape_file_data ('+keys+') VALUES ('+placeHolders+')', values, function(insertErr, insertResult){
-    callback(insertErr);
-  });
+  db.query(sql, values, callback);
+};
+
+/**
+ * Inserts attachment data scraped from sub pages.
+ * @param db
+ * @param attachObj
+ * @param callback
+ */
+exports.saveAttachRecord = function(db, attachObjs, callback){
+  async.each(attachObjs, function(attachObj, eachCallback) {
+    var keys = _.keys(attachObj).join(',');
+    var values = _.values(attachObj);
+    var placeHolders = new Array(values.length - 1);
+    placeHolders.push('?');
+    placeHolders = placeHolders.join('?, ');
+
+    var sql = 'INSERT INTO scrape_attachment_data (' + keys + ') VALUES (' + placeHolders + ')';
+    db.query(sql, values, eachCallback);
+  },callback);
 };

@@ -1,21 +1,30 @@
 var jsDom = require('node-jsdom');
 var moment = require('moment');
+var dominoUrls = require('../config/dominoUrls');
+
+/**
+ * reads the raw html from domino listing page.
+ * jumps to the first table and pulls relevant tds into a table
+ * @param content
+ * @param body
+ * @param callback
+ */
 exports.readListing = function(content, body, callback){
   var headerRow = 0;
   var _this = this;
   var baseUrl = 'https://bugfixdev.r7.rcuh.com';
   var pages = [];
+
+  //start jsDom and load it with jquery.
   jsDom.env(body, ["http://code.jquery.com/jquery.js"], function(domErrors, dom){
-    dom.$('a').each(function(link,element){
-      if(_this.urlMatch(element.href)){
-        var fileUrl = element.href.replace('file://', baseUrl);
 
-      }
-    });
-
+    //for each row of the dom. scrape the data and return it.
     dom.$('tr').each(function(cell, element){
+
+      //skip the first row cause its a header
       if(headerRow == 0) return headerRow++;
 
+      //define a function to pull data from the count of tds.
       var getTableCellValue = function(childId){
         var child = element._childNodes[childId];
         if(child._childNodes.length>0){
@@ -24,7 +33,10 @@ exports.readListing = function(content, body, callback){
         return null;
       };
 
+      //create an object naming each field and extracting the url from a linked element.
       var listingData = {
+
+        //change url to an absolute link
         url:element._childNodes[12]._childNodes[0]._childNodes[0].href.replace('file://', baseUrl),
         requestNumber:element._childNodes[12]._childNodes[0]._childNodes[0].innerHTML,
         documentNumber:getTableCellValue(2),
@@ -38,22 +50,35 @@ exports.readListing = function(content, body, callback){
         foCode:getTableCellValue(11)
       };
 
+      //get domino id from the url
       getDominoId(listingData);
+
+      //transform date from their respective formats to mysql format.
       setDates(listingData);
 
       pages.push(listingData)
     });
 
+    //returns array of objects with relevant data.
     callback(domErrors, pages);
   });
 };
 
+/**
+ * [HELPER] takes a domino url and pulls out the dominoId.
+ * @param data
+ */
 function getDominoId(data){
   var urlPieces = data.url.split('/');
   data.dominoId = urlPieces.pop();
 }
 
+/**
+ * [HELPER] takes the checkDate and the acceptedDate and converts both to mysql date formats. YYYY-MM-DD HH:mm:ss
+ * @param data
+ */
 function setDates(data){
+
   //check date comes in mm/dd/yyyy.
   if(data.checkDate && data.checkDate.length>0){
     var checkDate = moment(data.checkDate, 'MM/DD/YYYY');
@@ -68,6 +93,8 @@ function setDates(data){
   //accepted date comes in mm/dd/yyyy hh:mm:ss [am/pm]
   if(data.dateAccepted && data.dateAccepted.length>0){
     var acceptedDate = data.dateAccepted.split(' ');
+
+    //if pm and hour is < 12, add 12 hours to the time.
     if(acceptedDate.pop().toLowerCase() == 'pm'){
       var acceptedDateTime = (acceptedDate.pop()).split(':');
       if(acceptedDateTime[0] <= 11) {
@@ -75,6 +102,7 @@ function setDates(data){
       }
       acceptedDate.push(acceptedDateTime.join(':'));
     }
+
     acceptedDate = acceptedDate.join(' ');
     acceptedDate = moment(acceptedDate, 'MM/DD/YYYY HH:mm:ss');
     if(!acceptedDate.isValid()){
@@ -86,12 +114,18 @@ function setDates(data){
   }
 }
 
+/**
+ * takes a page's raw html and returns a list of links on the page that are attachments.
+ * @param body
+ * @param listingData
+ * @param callback
+ */
 exports.readPageForAttachments = function(body, listingData, callback){
   var _this = this;
   var attachments = [];
   var baseUrl = 'https://bugfixdev.r7.rcuh.com';
 
-
+  //start jsDom and load it with jquery.
   jsDom.env(body, ["http://code.jquery.com/jquery.js"], function(domErrors, dom) {
     dom.$('a').each(function(link,element){
       var attachObj = {};
@@ -101,7 +135,6 @@ exports.readPageForAttachments = function(body, listingData, callback){
 
       //if link is attachments, go deeper and pull those links
       if(element.innerHTML.toLowerCase().indexOf('file attachment') > -1){
-        console.log('attachment:', element.href, ' document:', listingData.dominoId );
         attachObj.href= element.href;
         attachObj.url = listingData.url;
         attachObj.type= 'file';
@@ -123,8 +156,13 @@ exports.readPageForAttachments = function(body, listingData, callback){
   });
 };
 
+/**
+ * Compares base urls ignoring the id information.
+ * @param url
+ * @returns {boolean}
+ */
 exports.urlMatch = function(url){
-  var templateUrl = 'file:///000168d/rcuh6.nsf/Payment+Docs/Final+Info/E05B18044A9F3A760A257C600068B0F0';
+  var templateUrl = dominoUrls.page;
   templateUrl = templateUrl.split('/').slice(0,-1).join('/');
   templateUrl = templateUrl.replace(/[^a-zA-Z0-9]/g, '');
 

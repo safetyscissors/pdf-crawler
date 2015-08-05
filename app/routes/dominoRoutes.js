@@ -6,8 +6,6 @@ var s3Service = require('../services/s3Service');
 var async = require('async');
 var _ = require('underscore');
 
-exports.unauth = function(req, res, next){};
-
 exports.raceTest = function(req, res, next){
   pageRequestService.testMysql(req.db, function(){});
 };
@@ -57,7 +55,7 @@ exports.pdfPage = function(pageData, callback){
   )
 };
 */
-
+/*
 exports.scrapePdf = function(req, res, next){
 
   async.eachSeries(req.listing, function(pageData, eachCallback){
@@ -151,7 +149,8 @@ exports.scrapePdf = function(req, res, next){
 };
 
 
-
+*/
+/*
 exports.scrapePdfOg = function(req, res, next){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     var pageRequest = pageRequestService.loadPage(pageData);
@@ -188,13 +187,63 @@ exports.scrapePdfOg = function(req, res, next){
      })
      );
      */
+/*
   }, function(callbackError){
     if(callbackError) return next(callbackError);
     return next();
   });
 };
+*/
 
 exports.pdfPages = function(req, res, next){
+  async.eachSeries(req.listing, function(pageData, eachCallback){
+    async.waterfall([
+
+      //load new page
+      function(waterfallCallback){
+        var pageRequest = pageRequestService.loadPage(pageData);
+        if(!pageRequest) return next(new Error('failed to create pageData ' + JSON.stringify(pageData)));
+
+        phantomService.loadPage(req.phantomServer, pageRequest, function(loadError, loadPage){
+          waterfallCallback(loadError, loadPage);
+        })
+      },
+
+      //pdf the page and save the scraped data+pdf url
+      function(loadPage, waterfallCallback){
+        phantomService.pdfPage(null, loadPage, pageData, function(pdfError, savedData){
+          if (pdfError) return waterfallCallback(pdfError);
+
+          mysqlService.saveListRecord(req.db, savedData, function (saveError) {
+            waterfallCallback(saveError, loadPage);
+          });
+        })
+      },
+
+      //get attachment data
+      function(loadPage, waterfallCallback){
+        loadPage.evaluate(
+          function(){return document.body.innerHTML},
+          function(body){
+            parsingService.readPageForAttachments(body, pageData, function(parseError, attachments) {
+              waterfallCallback(parseError, loadPage, attachments);
+            });
+          }
+        );
+      },
+
+      //save the attachment data
+      function(loadPage, attachments, waterfallCallback){
+        mysqlService.saveAttachRecord(req.db, attachments, function(saveError){
+          waterfallCallback(saveError);
+        })
+      }
+    ], eachCallback);
+  }, next);
+};
+
+/*
+exports.pdfPagesV1 = function(req, res, next){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     var pageRequest = pageRequestService.loadPage(pageData);
     if(!pageRequest) return next(new Error('failed to create pageData: ' + JSON.stringify(pageData)));
@@ -219,23 +268,12 @@ exports.pdfPages = function(req, res, next){
       );
 
     });
-    /*
-    phantomService.loadPage(req.phantomServer, pageRequest,
-      phantomService.pdfPage.bind(null, pageData, function(pdfError, savedData){
-        if (pdfError) return eachCallback(pdfError);
-
-        mysqlService.saveListRecord(req.db, savedData, function (saveError) {
-          eachCallback(saveError);
-        });
-      })
-    );
-    */
   }, function(callbackError){
     if(callbackError) return next(callbackError);
     return next();
   });
 };
-
+*/
 exports.uploadPages = function(req, res, next){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     s3Service.uploadPdf(req.s3, pageData, eachCallback);

@@ -1,6 +1,13 @@
 var s3 = require('s3');
 var s3config = require('../config/s3Login');
 
+/**
+ * Part of initialize. Connects to s3 based on '../config/s3Login'
+ * adds a req.s3
+ * @param req
+ * @param res
+ * @param next
+ */
 exports.initS3 = function(req, res, next){
   var client = s3.createClient({
     maxAsyncS3: 20,     // this is the default
@@ -15,6 +22,12 @@ exports.initS3 = function(req, res, next){
   next();
 };
 
+/**
+ * Puts file from 'app/pdfs/' to s3 'historic/'
+ * @param client
+ * @param file
+ * @param callback
+ */
 exports.uploadPdf = function(client, file, callback){
   var params = {
     localFile: 'app/pdfs/' + file.pdfName,
@@ -31,4 +44,11 @@ exports.uploadPdf = function(client, file, callback){
     .on('end', function(){
       callback();
     });
+};
+
+/**
+ * Checks that the file it was uploading exists on s3
+ */
+exports.confirmUpload = function(){
+  //todo
 };
