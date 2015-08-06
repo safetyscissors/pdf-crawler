@@ -1,6 +1,8 @@
 var jsDom = require('node-jsdom');
 var moment = require('moment');
 var dominoUrls = require('../config/dominoUrls');
+var logger = require('winston');
+
 
 /**
  * reads the raw html from domino listing page.
@@ -12,7 +14,7 @@ var dominoUrls = require('../config/dominoUrls');
 exports.readListing = function(content, body, callback){
   var headerRow = 0;
   var _this = this;
-  var baseUrl = 'https://bugfixdev.r7.rcuh.com';
+  var baseUrl = dominoUrls.base;
   var pages = [];
 
   //start jsDom and load it with jquery.
@@ -83,7 +85,7 @@ function setDates(data){
   if(data.checkDate && data.checkDate.length>0){
     var checkDate = moment(data.checkDate, 'MM/DD/YYYY');
     if(!checkDate.isValid()){
-      console.log(data.checkDate, ' was invalid for ', data.dominoId);
+      logger.error(data.checkDate + ' was invalid for ' + data.dominoId, data);
       data.checkDate = null;
     }else {
       data.checkDate = checkDate.format('YYYY-MM-DD HH:mm:ss');
@@ -106,7 +108,7 @@ function setDates(data){
     acceptedDate = acceptedDate.join(' ');
     acceptedDate = moment(acceptedDate, 'MM/DD/YYYY HH:mm:ss');
     if(!acceptedDate.isValid()){
-      console.log(data.dateAccepted, ' was invalid for ', data.dominoId);
+      logger.error(data.dateAccepted + ' was invalid for ' + data.dominoId, data);
       data.dateAccepted = null;
     }else {
       data.dateAccepted = acceptedDate.format('YYYY-MM-DD HH:mm:ss');
@@ -123,7 +125,7 @@ function setDates(data){
 exports.readPageForAttachments = function(body, listingData, callback){
   var _this = this;
   var attachments = [];
-  var baseUrl = 'https://bugfixdev.r7.rcuh.com';
+  var baseUrl = dominoUrls.base;
 
   //start jsDom and load it with jquery.
   jsDom.env(body, ["http://code.jquery.com/jquery.js"], function(domErrors, dom) {

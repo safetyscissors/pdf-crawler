@@ -10,7 +10,10 @@ exports.errorCheck = function(error, req, res, next){
   if(error){
     message += ' - ' + error.message;
   }
-  res.send(message);
+
+  if(!res.headerSent) {
+    res.send(message);
+  }
 };
 
 exports.initPhantom = function(req, res, next){

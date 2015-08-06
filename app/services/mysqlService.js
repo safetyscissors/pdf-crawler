@@ -1,6 +1,7 @@
 var mysql = require('mysql');
 var async = require('async');
 var _ = require('underscore');
+var logger = require('winston');
 
 /**
  * Creates a new db connection. returns a callback within the connect statement.
@@ -72,6 +73,7 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
 
     //finish waterfall
   ], function(error){
+    logger.info('[mysql] starting set '+currentIndex+' - '+(currentIndex+increment));
     callback(error, currentIndex, increment);
   });
 };

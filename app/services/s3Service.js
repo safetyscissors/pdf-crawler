@@ -1,5 +1,6 @@
 var s3 = require('s3');
 var s3config = require('../config/s3Login');
+var logger = require('winston');
 
 /**
  * Part of initialize. Connects to s3 based on '../config/s3Login'
@@ -42,6 +43,7 @@ exports.uploadPdf = function(client, file, callback){
       callback(err);
     })
     .on('end', function(){
+      logger.log('trace','[s3] uploaded '+ file.pdfName +'to s3');
       callback();
     });
 };

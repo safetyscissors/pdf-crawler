@@ -1,4 +1,5 @@
 {
+  "base":"https://bugfixdev.r7.rcuh.com",
   "auth":"https://bugfixdev.r7.rcuh.com/names.nsf?Login",
   "list":"https://bugfixdev.r7.rcuh.com/000168d/rcuh6.nsf/Payment+Docs/Final+Central",
   "page":"file:///000168d/rcuh6.nsf/Payment+Docs/Final+Info/E05B18044A9F3A760A257C600068B0F0"

@@ -5,6 +5,8 @@ var mysqlService = require('../services/mysqlService');
 var s3Service = require('../services/s3Service');
 var async = require('async');
 var _ = require('underscore');
+var logger = require('winston');
+var scrapeService = require('../services/scrapeService');
 
 exports.raceTest = function(req, res, next){
   pageRequestService.testMysql(req.db, function(){});
@@ -95,7 +97,6 @@ exports.scrapePdf = function(req, res, next){
       },
 
       function(loadPage, attachments, waterfallCallback){
-        console.log(attachments);
 
         async.each(attachments,
           function(attachment, nextAttachment){
@@ -117,7 +118,6 @@ exports.scrapePdf = function(req, res, next){
 
                     //response
                     function (windowHref) {
-                      console.log('window href:', windowHref);
                       attachmentPage.render('app/pdfs/jsPage' + (new Date).getTime() + '.jpg');
                       nextAttachment();
                     }
@@ -278,8 +278,7 @@ exports.uploadPages = function(req, res, next){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     s3Service.uploadPdf(req.s3, pageData, eachCallback);
   }, function(callbackError){
-    if(callbackError) return next(callbackError);
-    next()
+    next(callbackError)
   });
 };
 
@@ -299,26 +298,54 @@ exports.cleanUp = function(req, res, next){
   var tempDir ='app/pdfs';
   var exec = require('child_process').exec, child;
   child = exec('rm app/pdfs/*', function(err, out){
-    console.log(out);
+    if(out) logger.info('[server] '+out);
     if(err) return next(err);
     res.send('done');
 
     req.phantomServer.exit();
-    console.log('stopping phantom');
+    logger.info('[server] stopping phantom');
 
-    req.db.end(function(err){
-      console.log('stopping mysql');
+    req.db.end(function(dbErr){
+      if(dbErr) return next(dbErr)
+      logger.info('[server] stopping mysql');
     })
   });
 };
 
-exports.stopping = function(req, res, next){
-  req.phantomServer.exit();
-  console.log('stopping phantom');
+exports.scrapeAll = function(req, res, next){
+  var counter =0;
+  async.whilst(
+    //condition
+    function(){ return counter < 5;},
 
-  req.db.end(function(err){
-    console.log('stopping mysql');
-  })
+    //iterator
+    function(whilstCallback){
+      async.waterfall([
 
-  res.send('done');
+        //scrape the listing page to get the next set of files
+        function(waterfallCallback){
+          counter++;
+          scrapeService.scrapeListing(req, waterfallCallback);
+        },
+
+        //scrape each page on the listing page to pdf
+        function(waterfallCallback){
+          scrapeService.scrapeListingPages(req, waterfallCallback);
+        },
+
+        //upload the files
+        function(waterfallCallback){
+          scrapeService.uploadScrapedPages(req, waterfallCallback);
+        }
+
+      ],whilstCallback);
+    },
+
+    //done
+    function (whilstErr){
+      if(whilstErr) return next(whilstErr);
+      res.send("done");
+      next();
+    }
+  );
 };
