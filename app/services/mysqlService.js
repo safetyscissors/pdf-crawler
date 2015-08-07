@@ -27,7 +27,7 @@ exports.initDb = function(req,res,next){
  */
 exports.getNextRecordsToScrape = function(db, listUrl, callback){
   var increment = config.server.interval;
-  var currentIndex = 0;
+  var currentIndex = config.server.startingPos;
 
   async.waterfall([
 

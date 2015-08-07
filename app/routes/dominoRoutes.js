@@ -7,6 +7,7 @@ var async = require('async');
 var _ = require('underscore');
 var logger = require('winston');
 var scrapeService = require('../services/scrapeService');
+var config = require('../config/config.json');
 
 exports.raceTest = function(req, res, next){
   pageRequestService.testMysql(req.db, function(){});
@@ -40,7 +41,7 @@ exports.listingAll = function(req, res, next){
 
   async.whilst(
     //condition
-    function(){ return req.counter < 13053;},
+    function(){ return req.counter < config.server.stoppingPos},
 
     //iterator
     function(whilstCallback) {
