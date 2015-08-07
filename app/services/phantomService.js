@@ -57,7 +57,7 @@ exports.startServer = function(req, callback){
 exports.pdfPage = function(loadError, loadPage, pageData, callback){
   if(loadError) return callback(loadError);
   var dirName = 'app/pdfs/';
-  var fileName =  'archive-'+pageData.dominoId + '-' + pageData.projectNumber + '-' +  (new Date).getTime() + '.jpg';
+  var fileName =  'archive-'+pageData.dominoId + '-' + pageData.projectNumber + '-' +  (new Date).getTime() + '.pdf';
 
   pageData['pdfName'] = fileName;
 

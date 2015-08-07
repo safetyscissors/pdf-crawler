@@ -59,7 +59,7 @@ exports.loadListing = function(db, callback){
       method:'get'
     };
 
-    callback(dbErr, request);
+    callback(dbErr, request, dbResult);
   });
 };
 

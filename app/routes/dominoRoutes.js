@@ -300,7 +300,6 @@ exports.cleanUp = function(req, res, next){
   child = exec('rm app/pdfs/*', function(err, out){
     if(out) logger.info('[server] '+out);
     if(err) return next(err);
-    res.send('done');
 
     req.phantomServer.exit();
     logger.info('[server] stopping phantom');
@@ -313,38 +312,61 @@ exports.cleanUp = function(req, res, next){
 };
 
 exports.scrapeAll = function(req, res, next){
+  //send res to prevent timeout. orphans this process to run until its done
+  res.send('scrape started.');
+
   var counter =0;
   async.whilst(
     //condition
-    function(){ return counter < 5;},
+    function(){ return counter < 13053;},
+    //function(){return counter < 200},
 
     //iterator
     function(whilstCallback){
       async.waterfall([
 
-        //scrape the listing page to get the next set of files
-        function(waterfallCallback){
-          counter++;
-          scrapeService.scrapeListing(req, waterfallCallback);
-        },
+          //scrape the listing page to get the next set of files
+          function(waterfallCallback){
+            scrapeService.scrapeListing(req, function(scrapeError, startIndex){
+              counter=startIndex;
+              waterfallCallback(scrapeError)
+            });
+          },
 
-        //scrape each page on the listing page to pdf
-        function(waterfallCallback){
-          scrapeService.scrapeListingPages(req, waterfallCallback);
-        },
+          //scrape each page on the listing page to pdf
+          function(waterfallCallback){
+            scrapeService.scrapeListingPages(req, waterfallCallback);
+          },
 
-        //upload the files
-        function(waterfallCallback){
-          scrapeService.uploadScrapedPages(req, waterfallCallback);
+          //check file size is in acceptable range
+          function(waterfallCallback){
+            scrapeService.confirmFilePdfs(req, waterfallCallback);
+          },
+
+          //upload the files
+          function(waterfallCallback) {
+            scrapeService.uploadScrapedPages(req, waterfallCallback);
+          },
+
+          //delete from temp local storage
+          function(waterfallCallback){
+            scrapeService.cleanUp(req, waterfallCallback);
+          }
+        ],
+
+        //if batch fails, DONT pass error. just log and continue.
+        function(waterfallError){
+          if(waterfallError) logger.error('Batch Failed',waterfallError);
+          whilstCallback(null);
         }
+      );
 
-      ],whilstCallback);
     },
 
     //done
     function (whilstErr){
       if(whilstErr) return next(whilstErr);
-      res.send("done");
+      logger.info('no pages left');
       next();
     }
   );

@@ -24,7 +24,7 @@ exports.initS3 = function(req, res, next){
 };
 
 /**
- * Puts file from 'app/pdfs/' to s3 'historic/'
+ * Puts file from 'app/pdfs/' to s3 'historic/payments/'
  * @param client
  * @param file
  * @param callback
@@ -34,7 +34,7 @@ exports.uploadPdf = function(client, file, callback){
     localFile: 'app/pdfs/' + file.pdfName,
     s3Params:{
       Bucket:s3config.bucketName,
-      Key:'historic/'+file.pdfName
+      Key:'historic/payments/'+file.pdfName
     }
   };
 

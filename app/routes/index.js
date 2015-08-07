@@ -14,6 +14,6 @@ exports.addRoutes = function(app){
   app.get('/scrapePages', domino.scrapeAll); // domino.listing, domino.pdfPages, domino.uploadPages);
   //app.get('/testJs', domino.listing, domino.scrapePdf, domino.stopping); //domino.uploadPages, domino.cleanUp);
 
-  app.use(domino.cleanUp);
+  //app.use( domino.cleanUp);
   app.use(server.errorCheck);
 };

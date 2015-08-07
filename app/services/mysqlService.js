@@ -73,7 +73,7 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
 
     //finish waterfall
   ], function(error){
-    logger.info('[mysql] starting set '+currentIndex+' - '+(currentIndex+increment));
+    logger.info('[mysql] starting set '+currentIndex+' - '+(Number(currentIndex)+Number(increment)));
     callback(error, currentIndex, increment);
   });
 };

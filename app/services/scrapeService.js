@@ -6,10 +6,11 @@ var s3Service = require('../services/s3Service');
 var async = require('async');
 var _ = require('underscore');
 var logger = require('winston');
+var fs = require('fs');
 
 exports.scrapeListing = function(req, callback){
   //setup list page
-  pageRequestService.loadListing(req.db, function(dbError, listRequest){
+  pageRequestService.loadListing(req.db, function(dbError, listRequest, startPos){
 
     //send request
     phantomService.loadPage(req.phantomServer, listRequest, function(loadError, loadPage){
@@ -22,7 +23,7 @@ exports.scrapeListing = function(req, callback){
           if (domError) return callback(domError);
 
           req.listing = pages;
-          return callback();
+          return callback(null, startPos);
         })}
       );
     });
@@ -68,6 +69,7 @@ exports.scrapeListingPages = function(req, callback){
 
       //save the attachment data
       function(loadPage, attachments, waterfallCallback){
+        loadPage.close();
         mysqlService.saveAttachRecord(req.db, attachments, function(saveError){
           waterfallCallback(saveError);
         })
@@ -81,4 +83,30 @@ exports.uploadScrapedPages = function(req, callback){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     s3Service.uploadPdf(req.s3, pageData, eachCallback);
   }, callback);
+};
+
+exports.confirmFilePdfs = function(req, callback){
+  async.eachSeries(req.listing, function(pageData, eachCallback){
+    var dir = 'app/pdfs/';
+    fs.stat(dir+pageData.pdfName, function(fsErr, stat){
+      if (stat.size <100000 || stat.size > 2000000){
+        logger.warn('[confirm] whoa. ' + pageData.dominoId + ' had a file size of ' + stat.size);
+      }
+      eachCallback(fsErr)
+    });
+  }, callback);
+};
+
+exports.cleanUp = function(req, callback){
+  async.eachSeries(req.listing, function(pageData, eachCallback){
+    var dir = 'app/pdfs/';
+    fs.unlink(dir+pageData.pdfName, function(fsErr){
+      eachCallback(fsErr);
+    });
+  }, function(fsError){
+    if(req.listing.length!=10){
+      logger.warn('[cleanup] removed ' + req.listing.length + ' pages');
+    }
+    callback(fsError);
+  })
 };
