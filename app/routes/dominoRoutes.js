@@ -357,10 +357,10 @@ exports.scrapeAll = function(req, res, next){
         //if batch fails, DONT pass error. just log and continue.
         function(waterfallError){
           if(waterfallError) logger.error('Batch Failed',waterfallError);
+          delete req.listing;
           whilstCallback(null);
         }
       );
-
     },
 
     //done

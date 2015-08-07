@@ -23,6 +23,7 @@ exports.scrapeListing = function(req, callback){
           if (domError) return callback(domError);
 
           req.listing = pages;
+          loadPage.close();
           return callback(null, startPos);
         })}
       );
