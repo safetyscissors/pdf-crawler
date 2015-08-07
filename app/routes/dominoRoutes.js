@@ -33,6 +33,50 @@ exports.listing = function(req, res, next){
     });
   });
 };
+
+exports.listingAll = function(req, res, next){
+  res.send('list scrape started');
+  req.counter =0;
+
+  async.whilst(
+    //condition
+    function(){ return req.counter < 13053;},
+
+    //iterator
+    function(whilstCallback) {
+      async.waterfall([
+
+          //scrape the listing page to get the next set of files
+          function (waterfallCallback) {
+            scrapeService.scrapeListing(req, function (scrapeError, startIndex) {
+              req.counter = startIndex;
+              waterfallCallback(scrapeError)
+            });
+          }
+
+        ],
+
+        //if batch fails, DONT pass error. just log and continue.
+        function (waterfallError) {
+          if (waterfallError) logger.error('Batch Failed : ' + req.counter, waterfallError);
+          delete req.listing;
+
+          whilstCallback(null);
+        }
+      );
+    },
+
+    //done
+    function (whilstErr){
+      if(whilstErr) return next(whilstErr);
+      req.phantomServer.exit();
+      logger.info('no pages left');
+      next();
+    }
+  );13
+};
+
+
 /*
 exports.pdfPage = function(pageData, callback){
   async.waterfall(
@@ -289,6 +333,7 @@ exports.auth = function(req, res, next){
 
   //send request
   phantomService.loadPage(req.phantomServer, authRequest, function(loadError, loadPage){
+    loadPage.close();
     next(loadError);
   });
 
@@ -325,6 +370,23 @@ exports.scrapeAll = function(req, res, next){
     function(whilstCallback){
       async.waterfall([
 
+          //start phantom
+          function(waterfallCallback){
+            phantomService.startServer(req, waterfallCallback);
+          },
+
+          //auth
+          function(waterfallCallback){
+            //setup auth request
+            var authRequest = pageRequestService.authenticate();
+
+            //send request
+            phantomService.loadPage(req.phantomServer, authRequest, function(loadError, loadPage){
+              loadPage.close();
+              waterfallCallback(loadError);
+            });
+          },
+
           //scrape the listing page to get the next set of files
           function(waterfallCallback){
             scrapeService.scrapeListing(req, function(scrapeError, startIndex){
@@ -358,6 +420,10 @@ exports.scrapeAll = function(req, res, next){
         function(waterfallError){
           if(waterfallError) logger.error('Batch Failed',waterfallError);
           delete req.listing;
+
+          //end phantom
+          req.phantomServer.exit();
+
           whilstCallback(null);
         }
       );

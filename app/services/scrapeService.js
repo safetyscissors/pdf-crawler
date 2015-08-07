@@ -22,9 +22,28 @@ exports.scrapeListing = function(req, callback){
         function(body){ parsingService.readListing('content', body, function(domError, pages){
           if (domError) return callback(domError);
 
+
+          _.each(pages, function(element, index){
+            element.listingId = req.counter + index;
+          });
+
           req.listing = pages;
           loadPage.close();
-          return callback(null, startPos);
+
+          async.each(req.listing,
+
+            //iterator
+            function(page, eachCallback) {
+              mysqlService.saveListRecord(req.db, page, function (saveError) {
+                eachCallback(saveError);
+              });
+            },
+
+            //done
+            function(eachError){
+              callback(eachError, startPos);
+            }
+          )
         })}
       );
     });
@@ -105,7 +124,7 @@ exports.cleanUp = function(req, callback){
       eachCallback(fsErr);
     });
   }, function(fsError){
-    if(req.listing.length!=10){
+    if(req.listing.length!=100){
       logger.warn('[cleanup] removed ' + req.listing.length + ' pages');
     }
     callback(fsError);

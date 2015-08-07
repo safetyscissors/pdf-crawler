@@ -7,10 +7,11 @@ var s3Service = require('../services/s3Service');
 
 exports.addRoutes = function(app){
   app.use(bodyParser.json({limit:1024*1024*100}));
-  app.use(server.initPhantom, domino.auth, mysqlService.initDb, s3Service.initS3);
+  app.use(mysqlService.initDb, s3Service.initS3);
 
   app.get('/', server.healthCheck);
   app.get('/raceTest', domino.raceTest);
+  app.get('/listing', server.initPhantom, domino.auth, domino.listingAll);
   app.get('/scrapePages', domino.scrapeAll); // domino.listing, domino.pdfPages, domino.uploadPages);
   //app.get('/testJs', domino.listing, domino.scrapePdf, domino.stopping); //domino.uploadPages, domino.cleanUp);
 

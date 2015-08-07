@@ -85,7 +85,7 @@ function setDates(data){
   if(data.checkDate && data.checkDate.length>0){
     var checkDate = moment(data.checkDate, 'MM/DD/YYYY');
     if(!checkDate.isValid()){
-      logger.error('[check date] '+data.checkDate + ' was invalid for ' + data.dominoId, data);
+      logger.warn('[check date] '+data.checkDate + ' was invalid for ' + data.dominoId, data);
       data.checkDate = null;
     }else {
       data.checkDate = checkDate.format('YYYY-MM-DD HH:mm:ss');
@@ -108,7 +108,7 @@ function setDates(data){
     acceptedDate = acceptedDate.join(' ');
     acceptedDate = moment(acceptedDate, 'MM/DD/YYYY HH:mm:ss');
     if(!acceptedDate.isValid()){
-      logger.error('[accepted date] ' + data.dateAccepted + ' was invalid for ' + data.dominoId, data);
+      logger.warn('[accepted date] ' + data.dateAccepted + ' was invalid for ' + data.dominoId, data);
       data.dateAccepted = null;
     }else {
       data.dateAccepted = acceptedDate.format('YYYY-MM-DD HH:mm:ss');

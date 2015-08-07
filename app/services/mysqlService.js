@@ -2,7 +2,7 @@ var mysql = require('mysql');
 var async = require('async');
 var _ = require('underscore');
 var logger = require('winston');
-
+var config = require('../config/config.json');
 /**
  * Creates a new db connection. returns a callback within the connect statement.
  * adds a req.db
@@ -20,13 +20,13 @@ exports.initDb = function(req,res,next){
 };
 
 /**
- * safely gets the next 10 rows available.
+ * safely gets the next incremented rows available.
  * @param db
  * @param listUrl
  * @param callback
  */
 exports.getNextRecordsToScrape = function(db, listUrl, callback){
-  var increment = 10;
+  var increment = config.server.interval;
   var currentIndex = 0;
 
   async.waterfall([
