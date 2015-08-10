@@ -61,6 +61,11 @@ exports.readListing = function(content, body, callback){
       pages.push(listingData)
     });
 
+    dom.close();
+    if (process.memoryUsage().heapUsed > 200000000) { //only call if memory use is bove 200MB
+      logger.warn('[jsdom] dumping memory');
+      global.gc();
+    }
     //returns array of objects with relevant data.
     callback(domErrors, pages);
   });
@@ -85,7 +90,9 @@ function setDates(data){
   if(data.checkDate && data.checkDate.length>0){
     var checkDate = moment(data.checkDate, 'MM/DD/YYYY');
     if(!checkDate.isValid()){
-      logger.warn('[check date] '+data.checkDate + ' was invalid for ' + data.dominoId, data);
+      if(checkDate !== 'n/a') {
+        logger.warn('[check date] ' + data.checkDate + ' was invalid for ' + data.dominoId, data);
+      }
       data.checkDate = null;
     }else {
       data.checkDate = checkDate.format('YYYY-MM-DD HH:mm:ss');

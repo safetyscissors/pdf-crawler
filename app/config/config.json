@@ -2,6 +2,6 @@
   "server":{
     "interval":1000,
     "startingPos":1,
-    "stoppingPos":100000
+    "stoppingPos":200000
   }
 }

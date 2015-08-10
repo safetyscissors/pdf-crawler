@@ -11,7 +11,7 @@ exports.addRoutes = function(app){
 
   app.get('/', server.healthCheck);
   app.get('/raceTest', domino.raceTest);
-  app.get('/listing', server.initPhantom, domino.auth, domino.listingAll);
+  app.get('/listing', domino.authWithRequest, domino.listingAll);
   app.get('/scrapePages', domino.scrapeAll); // domino.listing, domino.pdfPages, domino.uploadPages);
   //app.get('/testJs', domino.listing, domino.scrapePdf, domino.stopping); //domino.uploadPages, domino.cleanUp);
 

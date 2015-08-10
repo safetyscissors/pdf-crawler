@@ -8,6 +8,9 @@ var _ = require('underscore');
 var logger = require('winston');
 var scrapeService = require('../services/scrapeService');
 var config = require('../config/config.json');
+var request = require('request');
+var theJar = request.jar();
+
 
 exports.raceTest = function(req, res, next){
   pageRequestService.testMysql(req.db, function(){});
@@ -49,7 +52,7 @@ exports.listingAll = function(req, res, next){
 
           //scrape the listing page to get the next set of files
           function (waterfallCallback) {
-            scrapeService.scrapeListing(req, function (scrapeError, startIndex) {
+            scrapeService.scrapeListingWithRequest(req, function (scrapeError, startIndex) {
               req.counter = startIndex;
               waterfallCallback(scrapeError)
             });
@@ -70,11 +73,11 @@ exports.listingAll = function(req, res, next){
     //done
     function (whilstErr){
       if(whilstErr) return next(whilstErr);
-      req.phantomServer.exit();
+      //req.phantomServer.exit();
       logger.info('no pages left');
       next();
     }
-  );13
+  );
 };
 
 
@@ -338,6 +341,16 @@ exports.auth = function(req, res, next){
     next(loadError);
   });
 
+};
+
+exports.authWithRequest = function(req, res, next){
+  //setup auth request, {url, method, data}
+  var authRequest = pageRequestService.authenticate();
+
+  req.loginCookies = theJar;
+  request.post({url:'https://securercuh01.rcuh.com/names.nsf?Login',jar:req.loginCookies, form:{Username:'accounting',Password:'regul8tr$'}}, function(reqError, reqResponse, reqBody){
+    next(reqError);
+  })
 };
 
 exports.cleanUp = function(req, res, next){
