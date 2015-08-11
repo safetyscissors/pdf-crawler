@@ -54,14 +54,13 @@ exports.startServer = function(req, callback){
  * @param callback
  * @returns {*}
  */
-exports.pdfPage = function(loadError, loadPage, pageData, callback){
-  if(loadError) return callback(loadError);
+exports.pdfPage = function(loadPage, pageData, callback){
   var dirName = 'app/pdfs/';
   var fileName =  'archive-'+pageData.dominoId + '-' + pageData.projectNumber + '-' +  (new Date).getTime() + '.pdf';
 
   pageData['pdfName'] = fileName;
 
-  loadPage.render(dirName + fileName);
-
-  return callback(null, pageData);
+  loadPage.render(dirName + fileName, function(){
+    return callback(null, pageData)
+  });
 };

@@ -31,6 +31,7 @@ exports.scrapeListingWithRequest = function(req, callback){
           element.listingId = req.counter + index;
         });
 
+        req.listing = pages;
         async.each(pages,
 
           //iterator
@@ -92,6 +93,52 @@ exports.scrapeListing = function(req, callback){
   });
 };
 
+exports.scrapeListingPageWithRequest = function(req, callback){
+  async.eachSeries(req.listing, function(pageData, eachCallback) {
+    async.waterfall([
+
+      //load new page
+      function (waterfallCallback) {
+        var pageRequest = pageRequestService.loadPage(pageData);
+        if(!pageRequest) return callback(new Error('failed to create pageData' + JSON.stringify(pageData)));
+
+        request({url:pageRequest.url, jar:req.loginCookies}, function(reqError, reqResponse, reqBody){
+
+          //if failed load, skip the rest.
+          if(reqError || reqResponse.statusCode !=200){
+            if(reqResponse.statusCode !=200) reqError = new Error('failed status code:' + reqResponse.statusCode);
+            return callback(reqError)
+          }
+
+          waterfallCallback(reqError, pageData, reqBody);
+        });
+      },
+
+      //read attachment urls
+      function (pageData, reqBody, waterfallCallback) {
+        parsingService.readPageForAttachments(reqBody, pageData, waterfallCallback);
+      },
+
+      //get the attachment data
+      function (attachments, waterfallCallback) {
+        pageData.method = 'get';
+        mysqlService.saveAttachRecord(req.db, attachments, waterfallCallback);
+      },
+
+      //pdf the page
+      function(waterfallCallback){
+        phantomService.loadPage(req.phantomServer,pageData, function(phErr, phPage){
+          phantomService.pdfPage(phPage, pageData, function(pdfErr, pdfData){
+            waterfallCallback(pdfErr, pdfData)
+          })
+        })
+      }
+
+    ], eachCallback);
+  }, callback);
+}
+
+
 exports.scrapeListingPages = function(req, callback){
   async.eachSeries(req.listing, function(pageData, eachCallback){
     async.waterfall([
@@ -106,9 +153,9 @@ exports.scrapeListingPages = function(req, callback){
         })
       },
 
-      //pdf the page and save the scraped data+pdf url
+      //pdf the page and save the scraped data+pdf urls
       function(loadPage, waterfallCallback){
-        phantomService.pdfPage(null, loadPage, pageData, function(pdfError, savedData){
+        phantomService.pdfPage(loadPage, pageData, function(pdfError, savedData){
           if (pdfError) return waterfallCallback(pdfError);
 
           mysqlService.saveListRecord(req.db, savedData, function (saveError) {

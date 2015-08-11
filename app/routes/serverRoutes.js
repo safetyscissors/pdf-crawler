@@ -11,7 +11,7 @@ exports.errorCheck = function(error, req, res, next){
     message += ' - ' + error.message;
   }
 
-  if(!res.headerSent) {
+  if(!res.headersSent) {
     res.send(message);
   }
 };

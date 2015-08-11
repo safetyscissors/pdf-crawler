@@ -63,7 +63,7 @@ exports.readListing = function(content, body, callback){
 
     dom.close();
     if (process.memoryUsage().heapUsed > 200000000) { //only call if memory use is bove 200MB
-      logger.warn('[jsdom] dumping memory');
+      logger.warn('[jsdom] dumping listing memory');
       global.gc();
     }
     //returns array of objects with relevant data.
@@ -90,7 +90,7 @@ function setDates(data){
   if(data.checkDate && data.checkDate.length>0){
     var checkDate = moment(data.checkDate, 'MM/DD/YYYY');
     if(!checkDate.isValid()){
-      if(checkDate !== 'n/a') {
+      if(data.checkDate !== 'n/a') {
         logger.warn('[check date] ' + data.checkDate + ' was invalid for ' + data.dominoId, data);
       }
       data.checkDate = null;
@@ -160,6 +160,12 @@ exports.readPageForAttachments = function(body, listingData, callback){
 
       attachments.push(attachObj);
     });
+
+    dom.close();
+    if (process.memoryUsage().heapUsed > 200000000) { //only call if memory use is bove 200MB
+      logger.warn('[jsdom] dumping attachment memory');
+      global.gc();
+    }
 
     callback(domErrors, attachments);
   });

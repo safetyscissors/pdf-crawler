@@ -56,6 +56,11 @@ exports.listingAll = function(req, res, next){
               req.counter = startIndex;
               waterfallCallback(scrapeError)
             });
+          },
+
+          //scrape each page to get pdfs and attachment data
+          function(waterfallCallback){
+            scrapeService.scrapeListingPageWithRequest(req, waterfallCallback);
           }
 
         ],
@@ -73,7 +78,7 @@ exports.listingAll = function(req, res, next){
     //done
     function (whilstErr){
       if(whilstErr) return next(whilstErr);
-      //req.phantomServer.exit();
+      req.phantomServer.exit();
       logger.info('no pages left');
       next();
     }
@@ -373,11 +378,11 @@ exports.cleanUp = function(req, res, next){
 exports.scrapeAll = function(req, res, next){
   //send res to prevent timeout. orphans this process to run until its done
   res.send('scrape started.');
+  req.counter = 0;
 
-  var counter =0;
   async.whilst(
     //condition
-    function(){ return counter < 13053;},
+    function(){ return req.counter < 13053;},
     //function(){return counter < 200},
 
     //iterator
@@ -404,7 +409,7 @@ exports.scrapeAll = function(req, res, next){
           //scrape the listing page to get the next set of files
           function(waterfallCallback){
             scrapeService.scrapeListing(req, function(scrapeError, startIndex){
-              counter=startIndex;
+              req.counter = startIndex;
               waterfallCallback(scrapeError)
             });
           },
