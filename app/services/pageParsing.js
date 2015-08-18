@@ -1,6 +1,5 @@
 var jsDom = require('node-jsdom');
 var moment = require('moment');
-var dominoUrls = require('../config/dominoUrls');
 var logger = require('winston');
 
 
@@ -11,10 +10,9 @@ var logger = require('winston');
  * @param body
  * @param callback
  */
-exports.readListing = function(content, body, callback){
+exports.readListing = function(content, body, baseUrl, callback){
   var headerRow = 0;
   var _this = this;
-  var baseUrl = dominoUrls.base;
   var pages = [];
 
   //start jsDom and load it with jquery.
@@ -129,10 +127,9 @@ function setDates(data){
  * @param listingData
  * @param callback
  */
-exports.readPageForAttachments = function(body, listingData, callback){
+exports.readPageForAttachments = function(body, listingData, baseUrl, callback){
   var _this = this;
   var attachments = [];
-  var baseUrl = dominoUrls.base;
 
   //start jsDom and load it with jquery.
   jsDom.env(body, ["http://code.jquery.com/jquery.js"], function(domErrors, dom) {
@@ -176,8 +173,7 @@ exports.readPageForAttachments = function(body, listingData, callback){
  * @param url
  * @returns {boolean}
  */
-exports.urlMatch = function(url){
-  var templateUrl = dominoUrls.page;
+exports.urlMatch = function(templateUrl, url){
   templateUrl = templateUrl.split('/').slice(0,-1).join('/');
   templateUrl = templateUrl.replace(/[^a-zA-Z0-9]/g, '');
 

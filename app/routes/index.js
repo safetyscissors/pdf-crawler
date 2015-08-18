@@ -7,7 +7,7 @@ var s3Service = require('../services/s3Service');
 
 exports.addRoutes = function(app){
   app.use(bodyParser.json({limit:1024*1024*100}));
-  app.use(mysqlService.initDb, s3Service.initS3);
+  app.use(server.loadServerVars, mysqlService.initDb, s3Service.initS3);
 
   app.get('/', server.healthCheck);
   app.get('/raceTest', domino.raceTest);

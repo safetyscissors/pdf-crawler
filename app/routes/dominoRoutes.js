@@ -13,12 +13,12 @@ var theJar = request.jar();
 
 
 exports.raceTest = function(req, res, next){
-  pageRequestService.testMysql(req.db, function(){});
+  pageRequestService.testMysql(req.db, req.config.dominoListUrl, function(){});
 };
 
 exports.listing = function(req, res, next){
   //setup list page
-  pageRequestService.loadListing(req.db, function(dbError, listRequest){
+  pageRequestService.loadListing(req.db, req.config.dominoListUrl, function(dbError, listRequest){
 
     //send request
     phantomService.loadPage(req.phantomServer, listRequest, function(loadError, loadPage){
@@ -27,7 +27,7 @@ exports.listing = function(req, res, next){
       //return all html
       loadPage.evaluate(
         function(){ return document.body.innerHTML },
-        function(body){ parsingService.readListing('content', body, function(domError, pages){
+        function(body){ parsingService.readListing('content', body, req.config.dominoBaseUrl, function(domError, pages){
           if (domError) return next(domError);
 
           req.listing = pages;
@@ -278,7 +278,7 @@ exports.pdfPages = function(req, res, next){
         loadPage.evaluate(
           function(){return document.body.innerHTML},
           function(body){
-            parsingService.readPageForAttachments(body, pageData, function(parseError, attachments) {
+            parsingService.readPageForAttachments(body, pageData, req.config.dominoBaseUrl, function(parseError, attachments) {
               waterfallCallback(parseError, loadPage, attachments);
             });
           }

@@ -1,4 +1,3 @@
-var dominoUrls = require('../config/dominoUrls');
 var mysqlService = require('../services/mysqlService');
 var _ = require('underscore');
 
@@ -7,9 +6,13 @@ var _ = require('underscore');
  * @returns {{url: *, method: string, data}}
  */
 exports.authenticate = function(){
-  var loginData = require('../config/dominoLogin');
+  var loginData = {
+    username: req.config.dominoUserName,
+    password: req.config.dominoPassword
+  };
+
   var request = {
-    url:dominoUrls.auth,
+    url:req.config.dominoAuthUrl,
     method:'post',
     data:loginData
   };
@@ -23,10 +26,10 @@ exports.authenticate = function(){
  * @param db
  * @param callback
  */
-exports.testMysql = function(db, callback){
+exports.testMysql = function(db, dominoListUrl, callback){
   for(var i=0;i<100;i++) {
     setTimeout(function() {
-      mysqlService.getNextRecordsToScrape(db, dominoUrls.list, function (dbErr, dbResult, increment) {
+      mysqlService.getNextRecordsToScrape(db, dominoListUrl, function (dbErr, dbResult, increment) {
         var debug = {
           err: dbErr,
           res: dbResult,
@@ -45,8 +48,8 @@ exports.testMysql = function(db, callback){
  * @param db
  * @param callback
  */
-exports.loadListing = function(db, callback){
-  mysqlService.getNextRecordsToScrape(db, dominoUrls.list, function(dbErr, dbResult, increment){
+exports.loadListing = function(db, dominoListUrl, callback){
+  mysqlService.getNextRecordsToScrape(db, dominoListUrl, function(dbErr, dbResult, increment){
     if(dbErr) return callback(dbErr);
 
     var getparams = '';
@@ -55,7 +58,7 @@ exports.loadListing = function(db, callback){
     }
 
     var request = {
-      url:dominoUrls.list + getparams,
+      url:dominoListUrl + getparams,
       method:'get'
     };
 

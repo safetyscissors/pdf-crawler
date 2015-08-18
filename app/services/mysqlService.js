@@ -11,7 +11,14 @@ var config = require('../config/config.json');
  * @param next
  */
 exports.initDb = function(req,res,next){
-  var db = mysql.createConnection(require('../config/mysqlLogin'));
+  var dbConfig = {
+    host: req.config.dbHost,
+    user: req.config.dbUser,
+    password: req.config.dbPassword,
+    database: req.config.database
+  };
+
+  var db = mysql.createConnection(dbConfig);
   req.db  = db;
 
   db.connect(function(dbError){

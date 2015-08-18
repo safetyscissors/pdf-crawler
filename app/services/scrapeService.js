@@ -11,7 +11,7 @@ var request = require('request');
 
 exports.scrapeListingWithRequest = function(req, callback){
   //setup list page returns callback(error, {url, method}, start position)
-  pageRequestService.loadListing(req.db, function(dbError, listRequest, startPos){
+  pageRequestService.loadListing(req.db, req.dominoListUrl, function(dbError, listRequest, startPos){
 
     //send the request
     request({url:listRequest.url, jar:req.loginCookies}, function(reqError, reqResponse, reqBody){
@@ -23,7 +23,7 @@ exports.scrapeListingWithRequest = function(req, callback){
       }
 
       //read the html into a list of links
-      parsingService.readListing('content',reqBody, function(domError, pages){
+      parsingService.readListing('content',reqBody, req.config.dominoBaseUrl, function(domError, pages){
         if(domError) return callback(domError);
 
         //keep a rough index of each reqeust
@@ -53,7 +53,7 @@ exports.scrapeListingWithRequest = function(req, callback){
 
 exports.scrapeListing = function(req, callback){
   //setup list page
-  pageRequestService.loadListing(req.db, function(dbError, listRequest, startPos){
+  pageRequestService.loadListing(req.db, req.config.dominoListUrl, function(dbError, listRequest, startPos){
 
     //send request
     phantomService.loadPage(req.phantomServer, listRequest, function(loadError, loadPage){
@@ -62,7 +62,7 @@ exports.scrapeListing = function(req, callback){
       //return all html
       loadPage.evaluate(
         function(){ return document.body.innerHTML },
-        function(body){ parsingService.readListing('content', body, function(domError, pages){
+        function(body){ parsingService.readListing('content', body, req.config.dominoBaseUrl, function(domError, pages){
           if (domError) return callback(domError);
 
 
@@ -116,7 +116,7 @@ exports.scrapeListingPageWithRequest = function(req, callback){
 
       //read attachment urls
       function (pageData, reqBody, waterfallCallback) {
-        parsingService.readPageForAttachments(reqBody, pageData, waterfallCallback);
+        parsingService.readPageForAttachments(reqBody, pageData, req.config.dominoBaseUrl, waterfallCallback);
       },
 
       //get the attachment data
@@ -169,7 +169,7 @@ exports.scrapeListingPages = function(req, callback){
         loadPage.evaluate(
           function(){return document.body.innerHTML},
           function(body){
-            parsingService.readPageForAttachments(body, pageData, function(parseError, attachments) {
+            parsingService.readPageForAttachments(body, pageData, req.config.dominoBaseUrl, function(parseError, attachments) {
               waterfallCallback(parseError, loadPage, attachments);
             });
           }

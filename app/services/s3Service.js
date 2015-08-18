@@ -1,5 +1,4 @@
 var s3 = require('s3');
-var s3config = require('../config/s3Login');
 var logger = require('winston');
 
 /**
@@ -10,6 +9,15 @@ var logger = require('winston');
  * @param next
  */
 exports.initS3 = function(req, res, next){
+  var s3config = {
+    bucketName: req.config.s3bucketName,
+    accessKeyId: req.config.s3accessKeyId,
+    secretAccessKey: req.config.s3secretAccessKey,
+    reqtion: req.config.s3region,
+    sslEnabled: req.config.s3sslEnabled,
+    maxRetries: req.config.s3maxRetries
+  };
+
   var client = s3.createClient({
     maxAsyncS3: 20,     // this is the default
     s3RetryCount: 3,    // this is the default
@@ -33,7 +41,7 @@ exports.uploadPdf = function(client, file, callback){
   var params = {
     localFile: 'app/pdfs/' + file.pdfName,
     s3Params:{
-      Bucket:s3config.bucketName,
+      Bucket: req.config.s3bucketName,
       Key:'historic/payments/'+file.pdfName
     }
   };
