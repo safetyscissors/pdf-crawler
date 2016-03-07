@@ -11,6 +11,60 @@ var config = require('../config/config.json');
 var request = require('request');
 var theJar = request.jar();
 
+exports.listingV2 = listingV2;
+
+/**
+ * ONLY gets a listing page and writes it to mysql.
+ * @param req
+ * @param res
+ * @param next
+ */
+function listingV2(req, res, next){
+  res.send('list scrape started');
+  req.counter =0;
+
+  async.whilst(
+    //condition
+    function(){ return req.counter < config.server.stoppingPos},
+
+    //iterator
+    function(whilstCallback) {
+      async.waterfall([
+
+          //scrape the listing page to get the next set of files
+          function (waterfallCallback) {
+            scrapeService.scrapeListingPage(req, function (scrapeError, startIndex) {
+              req.counter = startIndex;
+              waterfallCallback(scrapeError)
+            });
+          }
+        ],
+
+        //if batch fails, DONT pass error. just log and continue.
+        function (waterfallError) {
+          if (waterfallError) logger.error('Batch Failed : ' + req.counter, waterfallError);
+          delete req.listing;
+
+          whilstCallback(null);
+        }
+      );
+    },
+
+    //done
+    function (whilstErr){
+      if(whilstErr) return next(whilstErr);
+      req.phantomServer.exit();
+      logger.info('no pages left');
+      next();
+    }
+  );
+}
+
+
+
+
+
+
 
 exports.raceTest = function(req, res, next){
   pageRequestService.testMysql(req.db, req.config.dominoListUrl, function(){});
@@ -338,7 +392,7 @@ exports.uploadPages = function(req, res, next){
 exports.auth = function(req, res, next){
 
   //setup auth request
-  var authRequest = pageRequestService.authenticate();
+  var authRequest = pageRequestService.authenticate(req.config);
 
   //send request
   phantomService.loadPage(req.phantomServer, authRequest, function(loadError, loadPage){
@@ -350,10 +404,12 @@ exports.auth = function(req, res, next){
 
 exports.authWithRequest = function(req, res, next){
   //setup auth request, {url, method, data}
-  var authRequest = pageRequestService.authenticate();
+  var authRequest = pageRequestService.authenticate(req.config);
+  var loginUrl = 'https://securercuh01.rcuh.com/names.nsf?Login';
 
+  req.io.emit('alert', 'logging into '+loginUrl);
   req.loginCookies = theJar;
-  request.post({url:'https://securercuh01.rcuh.com/names.nsf?Login',jar:req.loginCookies, form:{Username:'accounting',Password:'regul8tr$'}}, function(reqError, reqResponse, reqBody){
+  request.post({url:loginUrl,jar:req.loginCookies, form:{Username:'accounting',Password:'regul8tr$'}}, function(reqError, reqResponse, reqBody){
     next(reqError);
   })
 };
@@ -397,7 +453,7 @@ exports.scrapeAll = function(req, res, next){
           //auth
           function(waterfallCallback){
             //setup auth request
-            var authRequest = pageRequestService.authenticate();
+            var authRequest = pageRequestService.authenticate(req.config);
 
             //send request
             phantomService.loadPage(req.phantomServer, authRequest, function(loadError, loadPage){

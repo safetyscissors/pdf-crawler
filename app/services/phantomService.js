@@ -12,7 +12,7 @@ var _ = require('underscore');
  * @returns {*}
  */
 exports.loadPage = function(phantomServer, requestObj, callback){
-  if(!_.has(requestObj, 'url')) return callback(new Error('[phantomService] request missing url'));
+  if(!_.has(requestObj, 'historic_original_url')) return callback(new Error('[phantomService] request missing url'));
   if(!_.has(requestObj, 'method')) return callback(new Error('[phantomService] request missing method'));
 
   phantomServer.createPage(function(page) {
@@ -24,9 +24,9 @@ exports.loadPage = function(phantomServer, requestObj, callback){
 
     //if get, give less arguments
     if (requestObj.method.toLowerCase() == 'get') {
-      page.open(requestObj.url, requestObj.method, processPage)
+      page.open(requestObj.historic_original_url, requestObj.method, processPage)
     } else {
-      page.open(requestObj.url, requestObj.method, queryString.stringify(requestObj.data), processPage)
+      page.open(requestObj.historic_original_url, requestObj.method, queryString.stringify(requestObj.data), processPage)
     }
   });
 };
@@ -40,6 +40,7 @@ exports.loadPage = function(phantomServer, requestObj, callback){
 exports.startServer = function(req, callback){
   var options = {parameters: {'ignore-ssl-errors': true, 'ssl-protocol':'any'}};
   phantom.create(function(phantomServer){
+    req.io.emit('alert','phantom server started');
     req.phantomServer = phantomServer;
     callback();
   }, options);

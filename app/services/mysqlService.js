@@ -47,7 +47,7 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
 
     //select current index
     function(waterfallCallback){
-      db.query('SELECT * FROM test.scrape_list_data WHERE current_list_url = "' + listUrl + '";', function(selectErr, selectResult) {
+      db.query('SELECT * FROM scrape_list_data WHERE current_list_url = "' + listUrl + '";', function(selectErr, selectResult) {
         if (selectErr) return db.rollback(function(){ waterfallCallback(selectErr) });
         currentIndex = selectResult[0]['current_list_index'];
         waterfallCallback();
@@ -64,7 +64,7 @@ exports.getNextRecordsToScrape = function(db, listUrl, callback){
 
     //check for race condition
     function(waterfallCallback) {
-      db.query('SELECT * FROM test.scrape_list_data WHERE current_list_url = "' + listUrl + '" AND current_list_index = "' + ( Number(currentIndex) + increment) + '";', function (checkErr, checkResult) {
+      db.query('SELECT * FROM scrape_list_data WHERE current_list_url = "' + listUrl + '" AND current_list_index = "' + ( Number(currentIndex) + increment) + '";', function (checkErr, checkResult) {
         if(checkErr) return db.rollback(function(){ waterfallCallback(checkErr)});
         if(checkResult.length !==1) return db.rollback(function(){waterfallCallback(new Error('race condition met'))});
         waterfallCallback();
@@ -99,7 +99,7 @@ exports.saveListRecord = function(db, page, callback){
   placeHolders.push('?');
   placeHolders = placeHolders.join('?, ');
 
-  var sql = 'INSERT INTO scrape_file_data ('+keys+') VALUES ('+placeHolders+')';
+  var sql = 'INSERT INTO historic_file ('+keys+') VALUES ('+placeHolders+')';
   db.query(sql, values, callback);
 };
 
@@ -117,7 +117,37 @@ exports.saveAttachRecord = function(db, attachObjs, callback){
     placeHolders.push('?');
     placeHolders = placeHolders.join('?, ');
 
-    var sql = 'INSERT INTO scrape_attachment_data (' + keys + ') VALUES (' + placeHolders + ')';
+    var sql = 'INSERT INTO historic_attachment (' + keys + ') VALUES (' + placeHolders + ')';
     db.query(sql, values, eachCallback);
   },callback);
+};
+
+exports.mapToDb = function(inputObj){
+  var mapping = {
+    amount:'historic_amount',
+    checkDate:'historic_check_date',
+    checkNo:'historic_check_number',
+    dateAccepted:'historic_date_accepted',
+    documentNumber: 'historic_document_number',
+    dominoId: 'historic_domino_id',
+    foCode: 'historic_fo_code',
+    principalInvestigator:'historic_principal_investigator',
+    projectNumber: 'historic_project_number',
+    requestNumber: 'historic_request_number',
+    url: 'historic_original_url',
+    vendorName: 'historic_vendor_name',
+    listingId: 'historic_listing_id'
+  };
+
+  var newOutput = {};
+
+  _.each(inputObj, function(value, attribute){
+    if(_.has(mapping, attribute)) {
+      newOutput[mapping[attribute]] = value;
+    }else{
+      loggly.warn('[mysql] missing mapping attribute for '+attribute+':'+value)
+    }
+  });
+
+  return newOutput;
 };

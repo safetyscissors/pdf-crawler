@@ -5,14 +5,14 @@ var _ = require('underscore');
  * Returns the request to login to domino site. Requires '../config/dominoLogin'
  * @returns {{url: *, method: string, data}}
  */
-exports.authenticate = function(){
+exports.authenticate = function(config){
   var loginData = {
-    username: req.config.dominoUserName,
-    password: req.config.dominoPassword
+    username: config.dominoUserName,
+    password: config.dominoPassword
   };
 
   var request = {
-    url:req.config.dominoAuthUrl,
+    url:config.dominoAuthUrl,
     method:'post',
     data:loginData
   };
@@ -72,10 +72,10 @@ exports.loadListing = function(db, dominoListUrl, callback){
  * @returns {*}
  */
 exports.loadPage = function(pageData){
-  if(!_.has(pageData, 'url')) return false;
+  if(!_.has(pageData, 'historic_original_url')) return false;
 
   var request = {
-    url:pageData.url,
+    url:pageData.historic_original_url,
     method:'get'
   };
 

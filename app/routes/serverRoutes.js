@@ -5,6 +5,7 @@ var _ = require('underscore');
 
 exports.healthCheck = function(req,res,next){
   var timestamp= (new Date).toISOString();
+  req.io.emit('alert','is ok ' + timestamp );
   res.send(timestamp);
 };
 

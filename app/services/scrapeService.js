@@ -9,9 +9,12 @@ var logger = require('winston');
 var fs = require('fs');
 var request = require('request');
 
-exports.scrapeListingWithRequest = function(req, callback){
+
+exports.scrapeListingPage = scrapeListingPage;
+
+function scrapeListingPage(req, callback){
   //setup list page returns callback(error, {url, method}, start position)
-  pageRequestService.loadListing(req.db, req.dominoListUrl, function(dbError, listRequest, startPos){
+  pageRequestService.loadListing(req.db, req.config.dominoListUrl, function(dbError, listRequest, startPos){
 
     //send the request
     request({url:listRequest.url, jar:req.loginCookies}, function(reqError, reqResponse, reqBody){
@@ -28,7 +31,49 @@ exports.scrapeListingWithRequest = function(req, callback){
 
         //keep a rough index of each reqeust
         _.each(pages, function(element, index){
-          element.listingId = req.counter + index;
+          element['historic_listing_id'] = req.counter + index;
+        });
+
+        req.listing = pages;
+        async.each(pages,
+
+          //iterator
+          function(page, eachCallback){
+            mysqlService.saveListRecord(req.db, page, function(saveError){
+              eachCallback(saveError);
+            });
+          },
+
+          //done
+          function(eachError){
+            callback(eachError, startPos);
+          }
+        );
+      });
+    });
+  });
+}
+
+exports.scrapeListingWithRequest = function(req, callback){
+  //setup list page returns callback(error, {url, method}, start position)
+  pageRequestService.loadListing(req.db, req.config.dominoListUrl, function(dbError, listRequest, startPos){
+
+    //send the request
+    request({url:listRequest.url, jar:req.loginCookies}, function(reqError, reqResponse, reqBody){
+
+      //if failed load, skip hte rest.
+      if(reqError || reqResponse.statusCode !=200){
+        if(reqResponse.statusCode !=200) reqError = new Error('failed status code:' + reqResponse.statusCode);
+        return callback(reqError)
+      }
+
+      //read the html into a list of links
+      parsingService.readListing('content',reqBody, req.config.dominoBaseUrl, function(domError, pages){
+        if(domError) return callback(domError);
+
+        //keep a rough index of each reqeust
+        _.each(pages, function(element, index){
+          element['historic_listing_id'] = req.counter + index;
         });
 
         req.listing = pages;
@@ -100,7 +145,10 @@ exports.scrapeListingPageWithRequest = function(req, callback){
       //load new page
       function (waterfallCallback) {
         var pageRequest = pageRequestService.loadPage(pageData);
-        if(!pageRequest) return callback(new Error('failed to create pageData' + JSON.stringify(pageData)));
+        if(!pageRequest){
+          console.log('nooooo');
+          return callback(new Error('failed to create pageData' + JSON.stringify(pageData)));
+        }
 
         request({url:pageRequest.url, jar:req.loginCookies}, function(reqError, reqResponse, reqBody){
 
